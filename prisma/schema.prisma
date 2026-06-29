@@ -1,0 +1,98 @@
+// ============================================================================
+// Prisma 数据库 Schema
+// 支持 SQLite，便于部署到 Windows 和 Ubuntu
+// ============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// 用户模型
+model User {
+  id            String    @id @default(cuid())
+  phone         String    @unique  // 手机号，唯一标识
+  nickname      String    @default("新用户")
+  avatar        String    @default("😎")
+  isVIP         Boolean   @default(false)
+  vipExpiry     DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // 关联
+  testRecords   TestRecord[]
+  favorites     FavoriteTest[]
+  preferences   UserPreferences?
+
+  @@index([phone])
+}
+
+// 用户偏好设置
+model UserPreferences {
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  theme      String   @default("dark")
+  language   String   @default("zh-CN")
+  fontSize   String   @default("medium")
+  animations  Boolean  @default(true)
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+// 测试记录
+model TestRecord {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  testId       String            // 测试ID (如 mbti, bigfive)
+  sessionId    String            // 会话ID
+  resultType   String            // 结果类型 (如 INTJ)
+  resultTitle  String            // 结果标题
+  resultEmoji  String            // 结果emoji
+  resultData   String            // 完整结果JSON
+  isPremium    Boolean @default(false)
+  sharedCount  Int      @default(0)
+  completedAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([testId])
+  @@index([completedAt])
+}
+
+// 收藏的测试
+model FavoriteTest {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  testId    String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, testId])
+  @@index([userId])
+}
+
+// 短信验证码记录
+model SmsCode {
+  id        String   @id @default(cuid())
+  phone     String
+  code      String   // 6位验证码
+  expiresAt DateTime // 过期时间
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([phone, createdAt])
+}
+
+// 全局配置
+model Config {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String
+  updatedAt DateTime @updatedAt
+}
