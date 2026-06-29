@@ -24,7 +24,7 @@ export async function authMiddleware(req, res, next) {
       where: { id: decoded.userId },
       select: {
         id: true,
-        phone: true,
+        username: true,
         nickname: true,
         avatar: true,
         isVIP: true,

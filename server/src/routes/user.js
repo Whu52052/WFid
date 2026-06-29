@@ -20,7 +20,7 @@ router.get('/profile', authMiddleware, async (req, res) => {
       success: true,
       data: {
         id: user.id,
-        phone: user.phone,
+        username: user.username,
         nickname: user.nickname,
         avatar: user.avatar,
         bio: user.bio,
@@ -88,6 +88,7 @@ router.get('/sync', authMiddleware, async (req, res) => {
       data: {
         user: {
           id: user.id,
+          username: user.username,
           nickname: user.nickname,
           avatar: user.avatar,
           bio: user.bio,
@@ -190,6 +191,7 @@ router.post('/sync', authMiddleware, async (req, res) => {
       data: {
         user: {
           id: user.id,
+          username: user.username,
           nickname: user.nickname,
           avatar: user.avatar,
           bio: user.bio,

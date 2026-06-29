@@ -1,120 +1,88 @@
 import { Router } from 'express';
+import bcrypt from 'bcryptjs';
 import prisma from '../utils/prisma.js';
-import { generateToken } from '../middleware/auth.js';
+import { generateToken, authMiddleware } from '../middleware/auth.js';
 
 const router = Router();
 
-// 生成6位验证码
-function generateCode() {
-  return Math.floor(100000 + Math.random() * 900000).toString();
-}
-
-// 发送短信验证码
-router.post('/send-code', async (req, res) => {
+router.post('/register', async (req, res) => {
   try {
-    const { phone } = req.body;
+    const { username, password, nickname } = req.body;
 
-    if (!phone || !/^1[3-9]\d{9}$/.test(phone)) {
-      return res.status(400).json({ success: false, message: '请输入正确的手机号' });
+    if (!username || !password) {
+      return res.status(400).json({ success: false, message: '用户名和密码不能为空' });
     }
 
-    // 检查60秒冷却
-    const recent = await prisma.smsCode.findFirst({
-      where: {
-        phone,
-        createdAt: { gte: new Date(Date.now() - 60 * 1000) },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    if (recent) {
-      const remaining = Math.ceil(
-        (recent.createdAt.getTime() + 60 * 1000 - Date.now()) / 1000
-      );
-      return res.status(429).json({
-        success: false,
-        message: `请 ${remaining} 秒后再试`,
-      });
+    if (username.length < 3 || username.length > 20) {
+      return res.status(400).json({ success: false, message: '用户名长度必须在3-20个字符之间' });
     }
 
-    const code = generateCode();
+    if (password.length < 6) {
+      return res.status(400).json({ success: false, message: '密码长度至少6位' });
+    }
 
-    // 存储验证码
-    await prisma.smsCode.create({
+    const existing = await prisma.user.findUnique({ where: { username } });
+    if (existing) {
+      return res.status(400).json({ success: false, message: '用户名已存在' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = await prisma.user.create({
       data: {
-        phone,
-        code,
-        expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+        username,
+        password: hashedPassword,
+        nickname: nickname || username,
+        preferences: { create: {} },
       },
+      include: { preferences: true },
     });
 
-    // TODO: 接入真实短信网关
-    // 开发环境返回验证码
-    if (process.env.NODE_ENV !== 'production') {
-      console.log(`[SMS] ${phone} -> ${code}`);
-      return res.json({ success: true, message: '验证码已发送', devCode: code });
-    }
+    const token = generateToken(user.id);
 
-    res.json({ success: true, message: '验证码已发送' });
+    res.status(201).json({
+      success: true,
+      message: '注册成功',
+      data: {
+        token,
+        user: {
+          id: user.id,
+          username: user.username,
+          nickname: user.nickname,
+          avatar: user.avatar,
+          bio: user.bio,
+          isVIP: user.isVIP,
+          vipExpiry: user.vipExpiry,
+          createdAt: user.createdAt,
+        },
+      },
+    });
   } catch (error) {
-    console.error('发送验证码失败:', error);
+    console.error('注册失败:', error);
     res.status(500).json({ success: false, message: '服务器错误' });
   }
 });
 
-// 登录
 router.post('/login', async (req, res) => {
   try {
-    const { phone, code } = req.body;
+    const { username, password } = req.body;
 
-    if (!phone || !code) {
-      return res.status(400).json({ success: false, message: '参数不完整' });
+    if (!username || !password) {
+      return res.status(400).json({ success: false, message: '用户名和密码不能为空' });
     }
 
-    // 验证验证码
-    const smsRecord = await prisma.smsCode.findFirst({
-      where: {
-        phone,
-        code,
-        used: false,
-        expiresAt: { gt: new Date() },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    if (!smsRecord) {
-      return res.status(401).json({ success: false, message: '验证码错误或已过期' });
-    }
-
-    // 标记已使用
-    await prisma.smsCode.update({
-      where: { id: smsRecord.id },
-      data: { used: true },
-    });
-
-    // 查找或创建用户
-    let user = await prisma.user.findUnique({ where: { phone } });
+    const user = await prisma.user.findUnique({ where: { username } });
 
     if (!user) {
-      user = await prisma.user.create({
-        data: {
-          phone,
-          nickname: `用户${phone.slice(-4)}`,
-          preferences: { create: {} },
-        },
-        include: { preferences: true },
-      });
-    } else {
-      // 确保有偏好设置
-      const prefs = await prisma.userPreferences.findUnique({
-        where: { userId: user.id },
-      });
-      if (!prefs) {
-        await prisma.userPreferences.create({ data: { userId: user.id } });
-      }
+      return res.status(401).json({ success: false, message: '用户名或密码错误' });
     }
 
-    // 检查VIP是否过期
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordValid) {
+      return res.status(401).json({ success: false, message: '用户名或密码错误' });
+    }
+
     let isVIP = user.isVIP;
     if (isVIP && user.vipExpiry && user.vipExpiry < new Date()) {
       await prisma.user.update({
@@ -123,6 +91,11 @@ router.post('/login', async (req, res) => {
       });
       isVIP = false;
     }
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { lastOnlineAt: new Date() },
+    });
 
     const token = generateToken(user.id);
 
@@ -133,7 +106,7 @@ router.post('/login', async (req, res) => {
         token,
         user: {
           id: user.id,
-          phone: user.phone,
+          username: user.username,
           nickname: user.nickname,
           avatar: user.avatar,
           bio: user.bio,
@@ -145,6 +118,45 @@ router.post('/login', async (req, res) => {
     });
   } catch (error) {
     console.error('登录失败:', error);
+    res.status(500).json({ success: false, message: '服务器错误' });
+  }
+});
+
+router.post('/change-password', authMiddleware, async (req, res) => {
+  try {
+    const { oldPassword, newPassword } = req.body;
+    const userId = req.user.id;
+
+    if (!oldPassword || !newPassword) {
+      return res.status(400).json({ success: false, message: '参数不完整' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ success: false, message: '新密码长度至少6位' });
+    }
+
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: '用户不存在' });
+    }
+
+    const isPasswordValid = await bcrypt.compare(oldPassword, user.password);
+
+    if (!isPasswordValid) {
+      return res.status(401).json({ success: false, message: '旧密码错误' });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedPassword },
+    });
+
+    res.json({ success: true, message: '密码修改成功' });
+  } catch (error) {
+    console.error('修改密码失败:', error);
     res.status(500).json({ success: false, message: '服务器错误' });
   }
 });

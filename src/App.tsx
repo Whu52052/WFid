@@ -6,6 +6,7 @@ import TestDetailPage from './pages/TestDetailPage';
 import TestTakingPage from './pages/TestTakingPage';
 import ResultPage from './pages/ResultPage';
 import UserCenterPage from './pages/UserCenterPage';
+import LoginPage from './pages/LoginPage';
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
       <div className="App min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900">
         <Routes>
           <Route path="/" element={<HomePage />} />
+          <Route path="/login" element={<LoginPage />} />
           <Route path="/tests" element={<TestListPage />} />
           <Route path="/test/:testId" element={<TestDetailPage />} />
           <Route path="/test/:testId/start" element={<TestTakingPage />} />

@@ -1,14 +1,23 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Sparkles, Brain, Star, Heart, Gamepad2, Briefcase, Zap, User } from 'lucide-react';
+import { Sparkles, Brain, Star, Heart, Gamepad2, Briefcase, Zap, User, LogIn } from 'lucide-react';
 import { CATEGORY_INFO, TestCategory } from '../types';
+import { useUserStore } from '../stores';
 
 const HomePage: React.FC = () => {
+  const { user } = useUserStore();
+  const isLoggedIn = user.userId && !user.userId.startsWith('guest_');
+
   const categories = Object.entries(CATEGORY_INFO).map(([key, value]) => ({
     id: key as TestCategory,
     ...value
   }));
+
+  const handleLogout = () => {
+    localStorage.removeItem('wfid_token');
+    window.location.reload();
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 text-white overflow-hidden">
@@ -22,9 +31,24 @@ const HomePage: React.FC = () => {
             <Link to="/tests" className="text-sm text-gray-300 hover:text-white transition">
               全部测试
             </Link>
-            <Link to="/user" className="p-2 hover:bg-white/10 rounded-full transition">
-              <User className="w-5 h-5" />
-            </Link>
+            {isLoggedIn ? (
+              <>
+                <Link to="/user" className="p-2 hover:bg-white/10 rounded-full transition">
+                  <User className="w-5 h-5" />
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="px-4 py-2 bg-white/10 rounded-full text-sm hover:bg-white/20 transition"
+                >
+                  退出登录
+                </button>
+              </>
+            ) : (
+              <Link to="/login" className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full text-sm font-medium hover:shadow-lg transition">
+                <LogIn className="w-4 h-4" />
+                登录
+              </Link>
+            )}
           </div>
         </div>
       </div>

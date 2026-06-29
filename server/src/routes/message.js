@@ -221,7 +221,7 @@ router.get('/search', authMiddleware, async (req, res) => {
       where: {
         OR: [
           { nickname: { contains: keyword } },
-          { phone: { contains: keyword } },
+          { username: { contains: keyword } },
         ],
       },
       select: {

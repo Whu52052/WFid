@@ -7,10 +7,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ============ 用户系统 ============
 model User {
   id            String    @id @default(cuid())
-  phone         String    @unique
+  username      String    @unique
+  password      String
+  phone         String?
   nickname      String    @default("新用户")
   avatar        String    @default("😎")
   bio           String    @default("")
@@ -39,7 +40,6 @@ model UserPreferences {
   updatedAt  DateTime @updatedAt
 }
 
-// ============ 测试记录 ============
 model TestRecord {
   id           String   @id @default(cuid())
   userId       String
@@ -49,7 +49,7 @@ model TestRecord {
   resultType   String
   resultTitle  String
   resultEmoji  String
-  resultData   String   // JSON 字符串
+  resultData   String
   isPremium    Boolean  @default(false)
   sharedCount  Int      @default(0)
   completedAt  DateTime @default(now())
@@ -69,13 +69,12 @@ model FavoriteTest {
   @@unique([userId, testId])
 }
 
-// ============ 消息系统 ============
 model Message {
   id         String   @id @default(cuid())
   senderId   String
   receiverId String
   content    String
-  type       String   @default("text") // text, image, system
+  type       String   @default("text")
   isRead     Boolean  @default(false)
   createdAt  DateTime @default(now())
 
@@ -87,19 +86,6 @@ model Message {
   @@index([createdAt])
 }
 
-// ============ 短信验证码 ============
-model SmsCode {
-  id        String   @id @default(cuid())
-  phone     String
-  code      String
-  expiresAt DateTime
-  used      Boolean  @default(false)
-  createdAt DateTime @default(now())
-
-  @@index([phone, createdAt])
-}
-
-// ============ 配置表 ============
 model Config {
   id        String   @id @default(cuid())
   key       String   @unique
