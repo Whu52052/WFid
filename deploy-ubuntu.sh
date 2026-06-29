@@ -38,12 +38,12 @@ else
     echo "   ✅ Node.js 已安装: $(node -v)"
 fi
 
-# 检查pnpm
-if ! command -v pnpm &> /dev/null; then
-    echo "   安装 pnpm..."
-    npm install -g pnpm
+# 检查npm
+if ! command -v npm &> /dev/null; then
+    echo "   安装 npm..."
+    $SUDO apt-get install -y npm
 else
-    echo "   ✅ pnpm 已安装: $(pnpm -v)"
+    echo "   ✅ npm 已安装: $(npm -v)"
 fi
 
 # 检查nginx
@@ -81,11 +81,11 @@ if [ -d "node_modules" ]; then
     echo "   依赖已存在，跳过安装"
 else
     echo "   安装依赖..."
-    pnpm install
+    npm install
 fi
 
 echo "   构建项目..."
-pnpm build
+npm run build
 
 echo ""
 
@@ -174,7 +174,7 @@ echo "📁 项目目录: $PROJECT_DIR"
 echo "📜 日志查看: sudo tail -f /var/log/nginx/access.log"
 echo ""
 echo "🔄 更新项目:"
-echo "   cd $PROJECT_DIR && git pull && pnpm build"
+echo "   cd $PROJECT_DIR && git pull && npm run build"
 echo ""
 echo "📋 常用命令:"
 echo "   启动: sudo systemctl start nginx"

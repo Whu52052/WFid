@@ -63,7 +63,7 @@ cp -r "$SOURCE_DIR/src" . 2>/dev/null || true
 cp -r "$SOURCE_DIR/public" . 2>/dev/null || true
 cp -r "$SOURCE_DIR/.github" . 2>/dev/null || true
 cp "$SOURCE_DIR/package.json" . 2>/dev/null || true
-cp "$SOURCE_DIR/pnpm-lock.yaml" . 2>/dev/null || true
+cp "$SOURCE_DIR/package-lock.json" . 2>/dev/null || true
 cp "$SOURCE_DIR/vite.config.ts" . 2>/dev/null || true
 cp "$SOURCE_DIR/tailwind.config.js" . 2>/dev/null || true
 cp "$SOURCE_DIR/postcss.config.js" . 2>/dev/null || true
