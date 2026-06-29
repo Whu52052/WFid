@@ -117,6 +117,19 @@ $SUDO cp -r "$PROJECT_DIR/server/"* "$BACK_DIR/"
 
 cd "$BACK_DIR"
 
+# 配置环境变量（必须在 prisma 命令之前创建）
+if [ ! -f ".env" ]; then
+    echo "   生成环境变量配置..."
+    JWT_SECRET=$(openssl rand -hex 32 2>/dev/null || echo "change-this-secret-$(date +%s)")
+    $SUDO bash -c "cat > .env << EOF
+DATABASE_URL=\"file:./prisma/dev.db\"
+JWT_SECRET=\"$JWT_SECRET\"
+PORT=$API_PORT
+FRONTEND_URL=\"http://$DOMAIN\"
+EOF"
+    echo -e "   ✅ 环境变量已生成"
+fi
+
 # 安装后端依赖
 if [ -f "package.json" ]; then
     echo "   安装后端依赖..."
@@ -128,19 +141,6 @@ if [ -f "package.json" ]; then
 else
     echo -e "${RED}❌ 后端 package.json 不存在${NC}"
     exit 1
-fi
-
-# 配置环境变量
-if [ ! -f ".env" ]; then
-    echo "   生成环境变量配置..."
-    JWT_SECRET=$(openssl rand -hex 32 2>/dev/null || echo "change-this-secret-$(date +%s)")
-    $SUDO bash -c "cat > .env << EOF
-DATABASE_URL=\"file:./prisma/dev.db\"
-JWT_SECRET=\"$JWT_SECRET\"
-PORT=$API_PORT
-FRONTEND_URL=\"http://$DOMAIN\"
-EOF"
-    echo -e "   ✅ 环境变量已生成"
 fi
 
 # 启动后端服务
