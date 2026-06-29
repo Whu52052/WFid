@@ -370,6 +370,7 @@ export const getZodiacById = (id: string): ZodiacSign | undefined => {
 
 // 根据出生日期获取星座
 export const getZodiacByBirthday = (month: number, day: number): ZodiacSign => {
+  // 日期范围按月份和日期排序，确保边界处理正确
   const dates = [
     { id: 'capricorn', start: [1, 1], end: [1, 19] },
     { id: 'aquarius', start: [1, 20], end: [2, 18] },
@@ -389,12 +390,17 @@ export const getZodiacByBirthday = (month: number, day: number): ZodiacSign => {
   const found = dates.find(d => {
     const [startMonth, startDay] = d.start;
     const [endMonth, endDay] = d.end;
-    
+
+    // 处理同一个月份内的情况
     if (month === startMonth && month === endMonth) {
       return day >= startDay && day <= endDay;
-    } else if (month === startMonth) {
+    }
+    // 处理月初情况（日期 >= 起始日）
+    if (month === startMonth) {
       return day >= startDay;
-    } else if (month === endMonth) {
+    }
+    // 处理月末情况（日期 <= 结束日）
+    if (month === endMonth) {
       return day <= endDay;
     }
     return false;

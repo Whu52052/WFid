@@ -139,7 +139,11 @@ export const calculateEnneagram = (answers: Answer[]): EnneagramResult => {
     });
   });
 
-  const sortedTypes = Object.entries(typeScores).sort((a, b) => b[1] - a[1]);
+  const sortedTypes = Object.entries(typeScores).sort((a, b) => {
+    // 先按分数降序排序，分数相同时按类型号升序排序（保证稳定性）
+    if (b[1] !== a[1]) return b[1] - a[1];
+    return parseInt(a[0]) - parseInt(b[0]);
+  });
   const primaryType = parseInt(sortedTypes[0][0]);
   const wingType = parseInt(sortedTypes[1][0]);
 
