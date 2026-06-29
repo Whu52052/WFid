@@ -1,0 +1,187 @@
+import { Item } from '../store/gameStore'
+
+export const itemsData: { [key: string]: Item } = {
+  // 序章物品
+  'old-key': {
+    id: 'old-key',
+    name: '老旧钥匙',
+    description: '一把生锈的铜钥匙，上面刻着一个"林"字。',
+    icon: '🗝️',
+    combinable: false,
+  },
+  'invitation': {
+    id: 'invitation',
+    name: '神秘邀请函',
+    description: '一封泛黄的邀请函，上面写着："民国十二年，九月十八日，速来，有危险。"署名处已模糊不清。',
+    icon: '📧',
+    combinable: false,
+  },
+  'rope': {
+    id: 'rope',
+    name: '麻绳',
+    description: '一根结实的麻绳，大约有三米长。',
+    icon: '🪢',
+    combinable: true,
+    combinableWith: ['hook'],
+  },
+  'old-newspaper': {
+    id: 'old-newspaper',
+    name: '旧报纸',
+    description: '民国十一年九月十三日的《申报》。头条："城东林家惨案，七人毙命。"',
+    icon: '📰',
+    combinable: false,
+  },
+  'book': {
+    id: 'book',
+    name: '林家史',
+    description: '一本关于林家家史的书。林家从清朝光绪年间发家，世代为官商...',
+    icon: '📖',
+    combinable: false,
+  },
+  'wine-bottle': {
+    id: 'wine-bottle',
+    name: '陈年老酒',
+    description: '一瓶落满灰尘的酒，标签上写着"民国元年"。',
+    icon: '🍷',
+    combinable: false,
+  },
+  'diary-fragment': {
+    id: 'diary-fragment',
+    name: '日记残页',
+    description: '日记的最后一页被撕掉了一角，只能看到几个字："...真相是...在地下...仪式..."',
+    icon: '📔',
+    combinable: false,
+  },
+  'brass-key': {
+    id: 'brass-key',
+    name: '黄铜钥匙',
+    description: '一把精致的黄铜钥匙，比普通钥匙要小一些。',
+    icon: '🗝️',
+    combinable: false,
+  },
+  'kitchen-knife': {
+    id: 'kitchen-knife',
+    name: '菜刀',
+    description: '一把生锈的菜刀，刀刃上有暗红色的污渍...',
+    icon: '🔪',
+    combinable: false,
+  },
+  // 第一章物品
+  'necklace': {
+    id: 'necklace',
+    name: '玉坠项链',
+    description: '一条精致的项链，吊坠是一块白玉，上面刻着一个"雪"字。',
+    icon: '📿',
+    combinable: false,
+  },
+  'photo': {
+    id: 'photo',
+    name: '全家福',
+    description: '一张全家福照片，但除了女主人外，其他人的脸都被涂花了。女主人眉宇间有一道熟悉的印记。',
+    icon: '🖼️',
+    combinable: false,
+  },
+  'love-letters': {
+    id: 'love-letters',
+    name: '情书',
+    description: '一捆恋人之间的通信。从字迹看，是一位小姐和一位穷书生的恋爱，字里行间满是无奈...',
+    icon: '💌',
+    combinable: false,
+  },
+  'music-box': {
+    id: 'music-box',
+    name: '八音盒',
+    description: '一个精致的八音盒，上面刻着月亮、乌鸦和星星的图案。上发条后，会奏出一段忧伤的旋律。',
+    icon: '🎵',
+    combinable: false,
+  },
+  'suicide-note': {
+    id: 'suicide-note',
+    name: '遗书',
+    description: '林老爷的遗书："当我完成仪式后，一切都会结束。我对不起他们，但为了林家的延续，我必须这么做..."',
+    icon: '📝',
+    combinable: false,
+  },
+  'revolver': {
+    id: 'revolver',
+    name: '左轮手枪',
+    description: '一把老式左轮手枪，枪膛里还有三发子弹。',
+    icon: '🔫',
+    combinable: false,
+  },
+  'silver-key': {
+    id: 'silver-key',
+    name: '银钥匙',
+    description: '一把闪闪发光的银钥匙，钥匙柄上刻着一只乌鸦。',
+    icon: '🔑',
+    combinable: false,
+  },
+  'diary': {
+    id: 'diary',
+    name: '主人日记',
+    description: '林老爷的私人日记，记录了他的一生。在最后几页，他提到了"仪式"、"第七个祭品"和"永生"。',
+    icon: '📓',
+    combinable: false,
+  },
+  // 第二章物品
+  'ritual-knife': {
+    id: 'ritual-knife',
+    name: '祭祀刀',
+    description: '一把造型诡异的刀，刀身刻满了看不懂的符文。刀柄上镶嵌着一颗暗红色的宝石。',
+    icon: '🗡️',
+    combinable: false,
+  },
+  'cursed-book': {
+    id: 'cursed-book',
+    name: '禁忌之书',
+    description: '一本古老的书籍，用不知名的文字写成。翻开它时，你感到一阵寒意从脊背升起。书中记载了一种"交换仪式"——用七条人命换取家族的永世昌盛。',
+    icon: '📕',
+    combinable: false,
+  },
+  'talisman': {
+    id: 'talisman',
+    name: '符咒',
+    description: '一张泛黄的符咒，上面用朱砂画着复杂的图案。据说可以镇住邪祟。',
+    icon: '📜',
+    combinable: false,
+  },
+  'family-tree': {
+    id: 'family-tree',
+    name: '家谱',
+    description: '林氏家族的家谱。其中一个分支被红色墨水划掉了，旁边写着"叛徒"。那个被划掉的人，名字叫林天明。',
+    icon: '🗺️',
+    combinable: false,
+  },
+  'wooden-box': {
+    id: 'wooden-box',
+    name: '木盒',
+    description: '一个做工精致的小木盒，里面放着一块指甲盖大小的玉佩。玉佩上刻着半个"命"字。',
+    icon: '📦',
+    combinable: false,
+  },
+  'shovel': {
+    id: 'shovel',
+    name: '铁锹',
+    description: '一把生了锈的铁锹，木柄上有干涸的泥土。',
+    icon: '⛏️',
+    combinable: false,
+  },
+  'silver-cross': {
+    id: 'silver-cross',
+    name: '银十字架',
+    description: '一个精致的银十字架，和周围的道教符咒格格不入。背面刻着一行小字："愿主保佑，1920"',
+    icon: '✝️',
+    combinable: false,
+  },
+  'mask': {
+    id: 'mask',
+    name: '祭司面具',
+    description: '一张木质面具，表情似笑非笑。戴上它时，你仿佛能听到无数人的低语。',
+    icon: '🎭',
+    combinable: false,
+  },
+}
+
+export const getItemById = (id: string): Item | undefined => {
+  return itemsData[id]
+}
