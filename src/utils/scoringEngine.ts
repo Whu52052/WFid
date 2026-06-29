@@ -325,10 +325,90 @@ export const calculateResult = (scoringType: string, answers: Answer[]): any => 
       return calculateEnneagram(answers);
     case 'disc':
       return calculateDISC(answers);
-    case 'percentage':
-    case 'category':
-    default:
-      return null;
+    case 'percentage': {
+      const { score, dimensionScores } = calculatePercentage(answers);
+      const level = getLevelDescription(score);
+      return {
+        type: score.toString(),
+        title: `${level.level}水平`,
+        emoji: level.emoji,
+        score,
+        shortDescription: level.description,
+        detailedDescription: `你的综合得分为 ${score} 分，属于"${level.level}"水平。${level.description}`,
+        dimensionScores,
+        strengths: ['思维敏捷', '适应力强', '学习能力出色'],
+        weaknesses: ['部分领域有待提升', '需要持续练习'],
+        recommendations: ['保持学习习惯', '多维度提升自己', '定期复盘总结'],
+      };
+    }
+    case 'category': {
+      const { category, scores } = calculateCategory(answers);
+      const categoryEmojis: Record<string, string> = {
+        '类型A': '🔥', '类型B': '💧', '类型C': '🌿', '类型D': '⭐',
+        '老虎': '🐯', '孔雀': '🦚', '考拉': '🐨', '猫头鹰': '🦉',
+      };
+      const emoji = categoryEmojis[category] || '✨';
+      const dimensionScores: Record<string, number> = {};
+      Object.entries(scores).forEach(([k, v]) => {
+        dimensionScores[k] = Math.round(v);
+      });
+      return {
+        type: category,
+        title: `${category}型`,
+        emoji,
+        shortDescription: `你是典型的${category}类型，拥有独特的个性特质。`,
+        detailedDescription: `经过测试分析，你属于${category}类型。这类人通常具有鲜明的个性特征，在特定领域表现出色。了解自己的类型可以帮助你更好地发挥优势，避开劣势。`,
+        dimensionScores,
+        strengths: ['独特的思维方式', '出色的个人魅力', '专注于擅长领域'],
+        weaknesses: ['可能存在盲点', '需要平衡发展'],
+        recommendations: ['发挥自身优势', '主动探索未知领域', '与不同类型的人交流学习'],
+      };
+    }
+    case 'zodiac': {
+      const { dimensionScores } = calculatePercentage(answers);
+      return {
+        type: '星座人格',
+        title: '星象特质分析',
+        emoji: '⭐',
+        shortDescription: '你的星座人格特质独特而迷人。',
+        detailedDescription: '通过星座人格测试，我们发现你具有独特的星象特质。这些特质影响着你的性格、喜好和行为方式。了解自己的星座人格可以帮助你更好地认识自己。',
+        dimensionScores,
+        strengths: ['独特的个人魅力', '直觉敏锐', '富有创造力'],
+        weaknesses: ['情绪波动', '有时过于理想化'],
+        recommendations: ['相信你的直觉', '培养情绪管理能力', '保持对生活的热情'],
+      };
+    }
+    case 'tarot': {
+      const { dimensionScores } = calculatePercentage(answers);
+      return {
+        type: '塔罗指引',
+        title: '命运之牌',
+        emoji: '🎴',
+        shortDescription: '塔罗牌为你揭示了当前的能量状态。',
+        detailedDescription: '通过塔罗牌测试，我们可以看到你当前的能量状态和潜在趋势。塔罗牌不是预言，而是一面镜子，帮助你看清内心真正的想法和感受。',
+        dimensionScores,
+        strengths: ['内在智慧丰富', '灵性感知力强', '直觉可靠'],
+        weaknesses: ['可能过于依赖直觉', '有时会迷茫'],
+        recommendations: ['倾听内心的声音', '保持开放的心态', '相信生命的安排'],
+      };
+    }
+    case 'custom':
+    default: {
+      const { score, dimensionScores } = calculatePercentage(answers);
+      const level = getLevelDescription(score);
+      return {
+        type: score.toString(),
+        title: `测试结果（${level.level}）`,
+        emoji: level.emoji,
+        score,
+        shortDescription: level.description,
+        detailedDescription: `你的综合得分为 ${score} 分，属于"${level.level}"水平。${level.description} 继续保持，你会越来越出色！`,
+        dimensionScores,
+        strengths: ['表现稳定', '有提升潜力'],
+        weaknesses: ['部分方面有待加强'],
+        recommendations: ['继续努力', '保持积极心态', '不断学习进步'],
+      };
+    }
   }
 };
 

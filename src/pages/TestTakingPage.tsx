@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, ArrowRight, Clock, X } from 'lucide-react';
@@ -12,7 +12,23 @@ const TestTakingPage: React.FC = () => {
   const { testId } = useParams<{ testId: string }>();
   const navigate = useNavigate();
   const test = getTestById(testId || '');
-  const questions = getQuestionsForTest(testId || '');
+  
+  const questions = useMemo(() => {
+    if (!testId) return [];
+    const cacheKey = `wfid_questions_${testId}`;
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached) {
+      try {
+        return JSON.parse(cached);
+      } catch (e) {
+        console.warn('缓存解析失败', e);
+      }
+    }
+    const qs = getQuestionsForTest(testId);
+    sessionStorage.setItem(cacheKey, JSON.stringify(qs));
+    return qs;
+  }, [testId]);
+  
   const { currentProgress, startTest, answerQuestion, goToQuestion, completeTest, resetTest } = useTestSessionStore();
   const { addTestRecord } = useUserStore();
   
@@ -24,7 +40,7 @@ const TestTakingPage: React.FC = () => {
         startTest(testId!, questions.length);
       }
     }
-  }, [testId, test, questions.length]);
+  }, [testId, test, questions.length, currentProgress, startTest]);
 
   if (!test || !currentProgress) {
     return (
