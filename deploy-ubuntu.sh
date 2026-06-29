@@ -1,106 +1,163 @@
 #!/bin/bash
+# ============================================================================
+# WFid - Ubuntu 一键部署脚本
+# 包含：前端(Nginx静态托管) + 后端(Express + PM2)
+# ============================================================================
 
 set -e
 
-echo "🚀 WFid - Ubuntu 部署脚本"
-echo "=========================="
-echo ""
+# 颜色
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+echo -e "${GREEN}"
+echo "🚀 WFid - 一键部署脚本"
+echo "========================"
+echo -e "${NC}"
 
 # 检查是否为root
-if [ "$EUID" -ne 0 ]; then 
-    echo "⚠️  建议使用root用户运行，或使用sudo"
+if [ "$EUID" -ne 0 ]; then
+    echo -e "${YELLOW}⚠️  建议使用root用户运行，或使用sudo${NC}"
     SUDO="sudo"
 else
     SUDO=""
 fi
 
-# 项目配置
-PROJECT_NAME="wfid"
-PROJECT_DIR="/opt/$PROJECT_NAME"
+# 配置
 DOMAIN=${1:-"localhost"}
-PORT=${2:-8080}
+FRONT_PORT=${2:-80}
+API_PORT=${3:-3001}
+PROJECT_DIR="/opt/wfid"
+FRONT_DIR="$PROJECT_DIR/frontend"
+BACK_DIR="$PROJECT_DIR/backend"
 
 echo "📋 部署配置:"
-echo "   项目目录: $PROJECT_DIR"
 echo "   域名: $DOMAIN"
-echo "   端口: $PORT"
+echo "   前端端口: $FRONT_PORT"
+echo "   API端口: $API_PORT"
+echo "   项目目录: $PROJECT_DIR"
 echo ""
 
-# 第一步：安装基础依赖
-echo "📦 第一步：安装基础依赖..."
+# ========== 第一步：安装依赖 ==========
+echo -e "${GREEN}📦 第一步：安装基础依赖...${NC}"
 
-# 检查Node.js
+# Node.js
 if ! command -v node &> /dev/null; then
-    echo "   安装 Node.js..."
+    echo "   安装 Node.js 22..."
     curl -fsSL https://deb.nodesource.com/setup_22.x | $SUDO bash -
     $SUDO apt-get install -y nodejs
 else
-    echo "   ✅ Node.js 已安装: $(node -v)"
+    echo -e "   ✅ Node.js: $(node -v)"
 fi
 
-# 检查npm
+# npm
 if ! command -v npm &> /dev/null; then
     echo "   安装 npm..."
     $SUDO apt-get install -y npm
 else
-    echo "   ✅ npm 已安装: $(npm -v)"
+    echo -e "   ✅ npm: $(npm -v)"
 fi
 
-# 检查nginx
+# Nginx
 if ! command -v nginx &> /dev/null; then
     echo "   安装 Nginx..."
     $SUDO apt-get update
     $SUDO apt-get install -y nginx
 else
-    echo "   ✅ Nginx 已安装: $(nginx -v 2>&1 | head -1)"
+    echo -e "   ✅ Nginx: $(nginx -v 2>&1 | head -1)"
+fi
+
+# PM2
+if ! command -v pm2 &> /dev/null; then
+    echo "   安装 PM2..."
+    $SUDO npm install -g pm2
+else
+    echo -e "   ✅ PM2: $(pm2 -v)"
 fi
 
 echo ""
 
-# 第二步：获取项目代码
-echo "📥 第二步：获取项目代码..."
+# ========== 第二步：创建目录 ==========
+echo -e "${GREEN}📁 第二步：准备项目目录...${NC}"
 
-if [ -d "$PROJECT_DIR" ]; then
-    echo "   项目目录已存在，更新代码..."
-    cd "$PROJECT_DIR"
-    git pull || echo "   ⚠️  Git pull 失败，保留现有代码"
-else
-    echo "   克隆项目..."
-    $SUDO mkdir -p $(dirname "$PROJECT_DIR")
-    git clone https://github.com/Whu52052/WFid.git "$PROJECT_DIR"
-    $SUDO chown -R $USER:$USER "$PROJECT_DIR"
-fi
-
-cd "$PROJECT_DIR"
+$SUDO mkdir -p "$FRONT_DIR"
+$SUDO mkdir -p "$BACK_DIR"
+echo -e "   ✅ 目录已创建"
 echo ""
 
-# 第三步：安装依赖并构建
-echo "🔧 第三步：安装依赖并构建..."
+# ========== 第三步：部署后端 ==========
+echo -e "${GREEN}🔧 第三步：部署后端服务...${NC}"
 
-if [ -d "node_modules" ]; then
-    echo "   依赖已存在，跳过安装"
+# 复制后端代码
+echo "   复制后端文件..."
+$SUDO cp -r server/* "$BACK_DIR/" 2>/dev/null || {
+    echo -e "   ${YELLOW}⚠️  未找到后端目录，请先将代码放到 server/ 下${NC}"
+}
+
+# 安装后端依赖
+cd "$BACK_DIR"
+if [ -f "package.json" ]; then
+    echo "   安装后端依赖..."
+    $SUDO npm install --production
+    echo "   初始化数据库..."
+    $SUDO npx prisma generate
+    $SUDO npx prisma db push
+    echo -e "   ✅ 后端依赖安装完成"
 else
-    echo "   安装依赖..."
+    echo -e "   ${YELLOW}⚠️  后端 package.json 不存在${NC}"
+fi
+
+# 配置环境变量
+if [ ! -f ".env" ]; then
+    echo "   生成环境变量配置..."
+    $SUDO bash -c "cat > .env << 'EOF'
+DATABASE_URL=\"file:./prisma/dev.db\"
+JWT_SECRET=\"$(openssl rand -hex 32 2>/dev/null || echo 'change-this-secret-key-in-production')\"
+PORT=$API_PORT
+FRONTEND_URL=\"http://$DOMAIN\"
+EOF"
+    echo -e "   ✅ 环境变量已生成"
+fi
+
+# 启动后端服务
+echo "   启动后端服务..."
+$SUDO pm2 delete wfid-api 2>/dev/null || true
+$SUDO pm2 start src/index.js --name wfid-api
+$SUDO pm2 save
+$SUDO pm2 startup systemd -u root --hp /root 2>/dev/null || true
+echo -e "   ✅ 后端服务已启动"
+echo ""
+
+# ========== 第四步：部署前端 ==========
+echo -e "${GREEN}🌐 第四步：部署前端...${NC}"
+
+cd /workspace
+if [ -f "package.json" ]; then
+    echo "   安装前端依赖..."
     npm install
+    echo "   构建前端..."
+    npm run build
+    echo "   复制到 Nginx 目录..."
+    $SUDO rm -rf "$FRONT_DIR"
+    $SUDO mkdir -p "$FRONT_DIR"
+    $SUDO cp -r dist/* "$FRONT_DIR/"
+    echo -e "   ✅ 前端部署完成"
+else
+    echo -e "   ${YELLOW}⚠️  前端 package.json 不存在${NC}"
 fi
-
-echo "   构建项目..."
-npm run build
-
 echo ""
 
-# 第四步：配置Nginx
-echo "🌐 第四步：配置 Nginx..."
+# ========== 第五步：配置 Nginx ==========
+echo -e "${GREEN}⚙️  第五步：配置 Nginx...${NC}"
 
-NGINX_CONF="/etc/nginx/sites-available/$PROJECT_NAME"
+NGINX_CONF="/etc/nginx/sites-available/wfid"
 
 $SUDO bash -c "cat > $NGINX_CONF << 'NGINX_EOF'
 server {
-    listen $PORT;
+    listen $FRONT_PORT;
     server_name $DOMAIN;
-
-    root $PROJECT_DIR/dist;
-    index index.html;
 
     # Gzip压缩
     gzip on;
@@ -116,15 +173,42 @@ server {
         application/json
         image/svg+xml;
 
+    # 前端静态文件
+    location / {
+        root $FRONT_DIR;
+        try_files \$uri \$uri/ /index.html;
+    }
+
+    # API 代理
+    location /api/ {
+        proxy_pass http://localhost:$API_PORT;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_cache_bypass \$http_upgrade;
+        proxy_read_timeout 86400;
+    }
+
+    # WebSocket
+    location /socket.io/ {
+        proxy_pass http://localhost:$API_PORT;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_read_timeout 86400;
+    }
+
     # 静态资源缓存
     location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
         expires 1y;
-        add_header Cache-Control \"public, immutable\";
-    }
-
-    # SPA路由回退
-    location / {
-        try_files \$uri \$uri/ /index.html;
+        add_header Cache-Control "public, immutable";
     }
 
     # 安全头
@@ -135,49 +219,53 @@ server {
 NGINX_EOF"
 
 # 启用站点
-$SUDO ln -sf "$NGINX_CONF" "/etc/nginx/sites-enabled/$PROJECT_NAME"
+$SUDO ln -sf "$NGINX_CONF" "/etc/nginx/sites-enabled/wfid"
+$SUDO rm -f /etc/nginx/sites-enabled/default
 
-# 测试Nginx配置
+# 测试配置
 echo "   测试 Nginx 配置..."
-if $SUDO nginx -t; then
-    echo "   ✅ Nginx 配置正确"
+if $SUDO nginx -t 2>&1; then
     $SUDO systemctl reload nginx
-    echo "   ✅ Nginx 已重载"
+    echo -e "   ✅ Nginx 配置成功"
 else
-    echo "   ❌ Nginx 配置错误"
+    echo -e "   ${RED}❌ Nginx 配置错误${NC}"
     exit 1
 fi
-
 echo ""
 
-# 第五步：配置防火墙
-echo "🔥 第五步：配置防火墙..."
+# ========== 第六步：配置防火墙 ==========
+echo -e "${GREEN}🔥 第六步：配置防火墙...${NC}"
 
 if command -v ufw &> /dev/null; then
     if $SUDO ufw status | grep -q "active"; then
-        $SUDO ufw allow $PORT/tcp
-        echo "   ✅ 防火墙已开放 $PORT 端口"
+        $SUDO ufw allow $FRONT_PORT/tcp
+        echo -e "   ✅ 防火墙已开放 $FRONT_PORT 端口"
     else
-        echo "   ⚠️  防火墙未启用"
+        echo -e "   ⚠️  防火墙未启用"
     fi
 else
-    echo "   ⚠️  未检测到ufw防火墙"
+    echo -e "   ⚠️  未检测到 ufw 防火墙"
 fi
-
 echo ""
 
-# 完成
-echo "🎉 部署完成！"
+# ========== 完成 ==========
+echo -e "${GREEN}🎉 部署完成！${NC}"
 echo ""
-echo "🌐 访问地址: http://$DOMAIN:$PORT"
-echo "📁 项目目录: $PROJECT_DIR"
-echo "📜 日志查看: sudo tail -f /var/log/nginx/access.log"
+echo "🌐 访问地址: http://$DOMAIN:$FRONT_PORT"
+echo "🔌 API 地址: http://$DOMAIN:$FRONT_PORT/api"
+echo "📡 WebSocket: ws://$DOMAIN:$FRONT_PORT/socket.io"
 echo ""
-echo "🔄 更新项目:"
-echo "   cd $PROJECT_DIR && git pull && npm run build"
+echo "📁 前端目录: $FRONT_DIR"
+echo "📁 后端目录: $BACK_DIR"
 echo ""
-echo "📋 常用命令:"
-echo "   启动: sudo systemctl start nginx"
-echo "   停止: sudo systemctl stop nginx"
-echo "   重启: sudo systemctl restart nginx"
-echo "   状态: sudo systemctl status nginx"
+echo "🔧 常用命令:"
+echo "   查看后端日志: pm2 logs wfid-api"
+echo "   重启后端: pm2 restart wfid-api"
+echo "   查看后端状态: pm2 status"
+echo "   查看 Nginx 日志: tail -f /var/log/nginx/access.log"
+echo ""
+echo -e "${YELLOW}⚠️  重要提示：${NC}"
+echo "   1. 请修改 $BACK_DIR/.env 中的 JWT_SECRET"
+echo "   2. 生产环境请配置 HTTPS（建议使用 Let's Encrypt）"
+echo "   3. 短信服务需要配置阿里云/腾讯云的密钥"
+echo ""

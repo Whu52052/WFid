@@ -1,0 +1,108 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============ 用户系统 ============
+model User {
+  id            String    @id @default(cuid())
+  phone         String    @unique
+  nickname      String    @default("新用户")
+  avatar        String    @default("😎")
+  bio           String    @default("")
+  isVIP         Boolean   @default(false)
+  vipExpiry     DateTime?
+  lastOnlineAt  DateTime  @default(now())
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  preferences   UserPreferences?
+  testRecords   TestRecord[]
+  favorites     FavoriteTest[]
+
+  sentMessages      Message[] @relation("SentMessages")
+  receivedMessages  Message[] @relation("ReceivedMessages")
+}
+
+model UserPreferences {
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  theme      String   @default("dark")
+  language   String   @default("zh-CN")
+  fontSize   String   @default("medium")
+  animations Boolean  @default(true)
+  updatedAt  DateTime @updatedAt
+}
+
+// ============ 测试记录 ============
+model TestRecord {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  testId       String
+  sessionId    String
+  resultType   String
+  resultTitle  String
+  resultEmoji  String
+  resultData   String   // JSON 字符串
+  isPremium    Boolean  @default(false)
+  sharedCount  Int      @default(0)
+  completedAt  DateTime @default(now())
+
+  @@unique([userId, sessionId])
+  @@index([userId])
+  @@index([testId])
+}
+
+model FavoriteTest {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  testId    String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, testId])
+}
+
+// ============ 消息系统 ============
+model Message {
+  id         String   @id @default(cuid())
+  senderId   String
+  receiverId String
+  content    String
+  type       String   @default("text") // text, image, system
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id])
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([createdAt])
+}
+
+// ============ 短信验证码 ============
+model SmsCode {
+  id        String   @id @default(cuid())
+  phone     String
+  code      String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([phone, createdAt])
+}
+
+// ============ 配置表 ============
+model Config {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+}
