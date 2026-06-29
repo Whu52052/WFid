@@ -1,0 +1,106 @@
+@import url('https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Sans+SC:wght@400;500;700&family=ZCOOL+KuaiLe&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --horror-bg: #1A0A0A;
+  --horror-bg-secondary: #2D1A1A;
+  --horror-accent: #8B0000;
+  --horror-text-primary: #D4C4A8;
+  --horror-text-secondary: #B8956C;
+  --horror-border: #3D2B2B;
+  --horror-danger: #660000;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Noto Sans SC', sans-serif;
+  background-color: var(--horror-bg);
+  color: var(--horror-text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--horror-bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--horror-border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--horror-accent);
+}
+
+/* Typewriter effect */
+@keyframes typewriter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.typewriter-text {
+  animation: typewriter 0.5s ease-in-out;
+}
+
+/* Shake effect */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-2px); }
+  20%, 40%, 60%, 80% { transform: translateX(2px); }
+}
+
+.shake {
+  animation: shake 0.5s ease-in-out;
+}
+
+/* Flicker effect */
+@keyframes flicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+  75% { opacity: 0.4; }
+}
+
+.flicker {
+  animation: flicker 2s infinite;
+}
+
+/* Breathing effect */
+@keyframes breathing {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.02); }
+}
+
+.breathing {
+  animation: breathing 4s ease-in-out infinite;
+}
+
+/* Glow effect */
+.glow {
+  box-shadow: 0 0 10px var(--horror-accent), 0 0 20px var(--horror-accent);
+}
+
+/* Paper texture effect */
+.paper-texture {
+  background-image:
+    linear-gradient(90deg, transparent 79px, #8B000033 79px, #8B000033 81px, transparent 81px),
+    linear-gradient(#2D1A1A22 1px, transparent 1px);
+  background-size: 100% 100%, 100% 1.5em;
+}

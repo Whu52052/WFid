@@ -1,0 +1,79 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./horror-game.db"
+}
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  password     String
+  nickname     String
+  createdAt    DateTime @default(now())
+  lastOnlineAt DateTime @default(now())
+  gameRooms    GameRoom[]
+  playerProgress PlayerProgress[]
+}
+
+model GameRoom {
+  id            String   @id @default(cuid())
+  roomCode      String   @unique
+  creatorId     String
+  creator       User     @relation(fields: [creatorId], references: [id])
+  status        String   @default("waiting") // waiting, playing, finished
+  currentChapter Int     @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  players       PlayerProgress[]
+}
+
+model PlayerProgress {
+  id              String   @id @default(cuid())
+  roomId          String
+  room            GameRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+  currentSceneId  String   @default("entrance")
+  inventory       String   @default("[]") // JSON array
+  notes           String   @default("[]") // JSON array
+  exploredScenes  String   @default("[]") // JSON array
+  solvedPuzzles   String   @default("[]") // JSON array
+  isOnline        Boolean  @default(true)
+  joinedAt        DateTime @default(now())
+
+  @@unique([roomId, userId])
+}
+
+model Scene {
+  id          String @id
+  chapterId   Int
+  name        String
+  description String
+  imageAsset  String?
+  connections String @default("[]") // JSON array
+  items       String @default("[]") // JSON array
+  puzzles     String @default("[]") // JSON array
+  triggers    String @default("[]") // JSON array
+}
+
+model Puzzle {
+  id        String @id
+  sceneId   String
+  type      String // password, logic, combination, interaction
+  name      String
+  hint      String
+  solution  String
+  reward    String @default("{}") // JSON object
+  isSolved  Boolean @default(false)
+}
+
+model Ending {
+  id          String @id
+  name        String
+  description String
+  condition   String @default("{}") // JSON object
+  unlockedBy  String?
+}
